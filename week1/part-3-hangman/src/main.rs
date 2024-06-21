@@ -17,6 +17,7 @@ use rand::Rng;
 use std::fs;
 use std::io;
 use std::io::Write;
+use std::collections::HashSet;
 
 const NUM_INCORRECT_GUESSES: u32 = 5;
 const WORDS_PATH: &str = "words.txt";
@@ -37,4 +38,56 @@ fn main() {
     // println!("random word: {}", secret_word);
 
     // Your code here! :)
+    println!("Welcome to Hangman!");
+    let mut word_so_far = Vec::new();
+    let mut guessed = HashSet::new();
+    let mut not_guessed_words = HashSet::new();
+
+    for i in 0..secret_word_chars.len() {
+        word_so_far.push('-');
+        not_guessed_words.insert(secret_word_chars[i]);
+    }
+
+    loop {
+        print!("\x1B[2J\x1B[1;1H"); // ANSI转义序列，清空整个控制台并将光标移到左上角
+        println!(
+            "The word so far is {}",
+            word_so_far.iter().collect::<String>()
+        );
+        println!(
+            "You have guessed the following letters: {}",
+            guessed.iter().collect::<String>()
+        );
+        // println!(
+        //     "You have {} guesses left",
+        //     NUM_INCORRECT_GUESSES - guessed.len() as u32
+        // );
+        print!("Please guess a letter: ");
+        // Make sure the prompt from the previous line gets displayed:
+        io::stdout().flush().expect("Error flushing stdout.");
+        let mut guess = String::new();
+        io::stdin()
+            .read_line(&mut guess)
+            .expect("Error reading line.");
+
+        let guess_char = guess.chars().nth(0).unwrap();
+        if !guessed.contains(&guess_char) {
+            guessed.insert(guess_char);
+            if not_guessed_words.contains(&guess_char) {
+                for i in 0..secret_word_chars.len() {
+                    if secret_word_chars[i] == guess_char {
+                        word_so_far[i] = guess_char;
+                    }
+                }
+                not_guessed_words.remove(&guess_char);
+
+                if not_guessed_words.len() == 0 {
+                    println!("Congratulations you guessed the secret word: {}!", secret_word);
+                    break;
+                }
+            } else {
+                println!("Sorry, that letter is not in the word")
+            }
+        }
+    }
 }
